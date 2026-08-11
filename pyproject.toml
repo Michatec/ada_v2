@@ -1,0 +1,24 @@
+[project]
+name = "ada-v2"
+version = "0.1.0"
+description = "ADA Assistant"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "python-socketio",
+    "python-multipart",
+    "google-genai",
+    "opencv-python",
+    "pyaudio",
+    "pillow",
+    "mss",
+    "playwright",
+    "python-kasa",
+    "zeroconf>=0.131.0",
+    "aiohttp>=3.9.0",
+    "python-dotenv",
+    "mediapipe",
+    "build123d",
+]
