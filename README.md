@@ -1,6 +1,6 @@
 # A.D.A V2 - Advanced Design Assistant
 
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11-blue?logo=python)
+![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.12-blue?logo=python)
 ![React](https://img.shields.io/badge/React-18.2-61DAFB?logo=react)
 ![Electron](https://img.shields.io/badge/Electron-28-47848F?logo=electron)
 ![Gemini](https://img.shields.io/badge/Google%20Gemini-Native%20Audio-4285F4?logo=google)
@@ -86,7 +86,7 @@ graph TB
 git clone https://github.com/nazirlouis/ada_v2.git && cd ada_v2
 
 # 2. Create Python environment (Python 3.11)
-conda create -n ada_v2 python=3.11 -y && conda activate ada_v2
+conda create -n ada_v2 python=3.12 -y && conda activate ada_v2
 brew install portaudio  # macOS only (for PyAudio)
 pip install -r requirements.txt
 playwright install chromium
@@ -156,7 +156,7 @@ brew install portaudio
 Create a single Python 3.11 environment:
 
 ```bash
-conda create -n ada_v2 python=3.11
+conda create -n ada_v2 python=3.12
 conda activate ada_v2
 
 # Install all dependencies
