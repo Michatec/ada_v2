@@ -39,9 +39,6 @@ function createWindow() {
                 console.log('Frontend loaded successfully!');
                 windowWasShown = true;
                 mainWindow.show();
-                if (isDev) {
-                    mainWindow.webContents.openDevTools();
-                }
             })
             .catch((err) => {
                 console.error(`Failed to load frontend: ${err.message}`);
