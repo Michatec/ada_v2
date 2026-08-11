@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && npx electron .\"",
     "build": "vite build",
-    "start": "npx electron ."
+    "start": "concurrently -k \"vite\" \"wait-on tcp:5173 && npx electron .\""
   },
   "keywords": [],
   "author": "",
