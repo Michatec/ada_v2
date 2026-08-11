@@ -153,7 +153,7 @@ brew install portaudio
 - No additional system dependencies required!
 
 ### 2. Python Environment
-Create a single Python 3.11 environment:
+Create a single Python 3.12 environment:
 
 ```bash
 conda create -n ada_v2 python=3.12
