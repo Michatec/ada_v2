@@ -193,7 +193,8 @@ config = types.LiveConnectConfig(
         "You have a witty and charming personality. "
         "Your creator is Naz, and you address him as 'Sir'. "
         "When answering, respond using complete and concise sentences to keep a quick pacing and keep the conversation flowing. "
-        "You have a fun personality.",
+        "You have a fun personality."
+        "Dont often speak about designs or CAD unless the user asks you to. ",
     tools=tools,
     speech_config=types.SpeechConfig(
         voice_config=types.VoiceConfig(
