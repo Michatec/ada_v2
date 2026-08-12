@@ -328,36 +328,6 @@ This is a server-side issue from the Gemini API. Simply reconnect by clicking th
 
 ---
 
-## 📂 Project Structure
-
-```
-ada_v2/
-├── backend/                    # Python server & AI logic
-│   ├── ada.py                  # Gemini Live API integration
-│   ├── server.py               # FastAPI + Socket.IO server
-│   ├── cad_agent.py            # CAD generation orchestrator
-│   ├── printer_agent.py        # 3D printer discovery & slicing
-│   ├── web_agent.py            # Playwright browser automation
-│   ├── kasa_agent.py           # TP-Link smart home control
-│   ├── authenticator.py        # MediaPipe face auth logic
-│   ├── project_manager.py      # Project context management
-│   ├── tools.py                # Tool definitions for Gemini
-│   └── reference.jpg           # Your face photo (add this!)
-├── src/                        # React frontend
-│   ├── App.jsx                 # Main application component
-│   ├── components/             # UI components (11 files)
-│   └── index.css               # Global styles
-├── electron/                   # Electron main process
-│   └── main.js                 # Window & IPC setup
-├── projects/                   # User project data (auto-created)
-├── .env                        # API keys (create this!)
-├── requirements.txt            # Python dependencies
-├── package.json                # Node.js dependencies
-└── README.md                   # You are here!
-```
-
----
-
 ## ⚠️ Known Limitations
 
 | Limitation | Details |
