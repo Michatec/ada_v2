@@ -1,8 +1,6 @@
 # A.D.A V2 - Advanced Design Assistant
 
 ![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.12-blue?logo=python)
-![React](https://img.shields.io/badge/React-18.2-61DAFB?logo=react)
-![Electron](https://img.shields.io/badge/Electron-28-47848F?logo=electron)
 ![Gemini](https://img.shields.io/badge/Google%20Gemini-Native%20Audio-4285F4?logo=google)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
@@ -83,12 +81,13 @@ graph TB
 
 ```bash
 # 1. Clone and enter
-git clone https://github.com/nazirlouis/ada_v2.git && cd ada_v2
+git clone https://github.com/michatec/ada_v2.git && cd ada_v2
 
-# 2. Create Python environment (Python 3.11)
-conda create -n ada_v2 python=3.12 -y && conda activate ada_v2
+# 2. Create Python environment (Python 3.12)
+uv sync
+Windows: .venv\Scripts\activate
+MacOS/Linux: source .venv/bin/activate
 brew install portaudio  # macOS only (for PyAudio)
-pip install -r requirements.txt
 playwright install chromium
 
 # 3. Setup frontend
@@ -98,7 +97,7 @@ npm install
 echo "GEMINI_API_KEY=your_key_here" > .env
 
 # 5. Run!
-conda activate ada_v2 && npm run dev
+npm run start
 ```
 
 </details>
@@ -113,10 +112,8 @@ If you have never coded before, follow these steps first!
 **Step 1: Install Visual Studio Code (The Editor)**
 - Download and install [VS Code](https://code.visualstudio.com/). This is where you will write code and run commands.
 
-**Step 2: Install Anaconda (The Manager)**
-- Download [Miniconda](https://docs.conda.io/en/latest/miniconda.html) (a lightweight version of Anaconda).
-- This tool allows us to create isolated "playgrounds" (environments) for our code so different projects don't break each other.
-- **Windows Users**: During install, check "Add Anaconda to my PATH environment variable" (even if it says not recommended, it makes things easier for beginners).
+**Step 2: Install UV (The Manager)**
+- Download and Install [UV](https://docs.astral.sh/uv/getting-started/installation/). This is the python manager.
 
 **Step 3: Install Git (The Downloader)**
 - **Windows**: Download [Git for Windows](https://git-scm.com/download/win).
@@ -126,7 +123,7 @@ If you have never coded before, follow these steps first!
 1. Open your terminal (or Command Prompt on Windows).
 2. Type this command and hit Enter:
    ```bash
-   git clone https://github.com/nazirlouis/ada_v2.git
+   git clone https://github.com/michatec/ada_v2.git
    ```
 3. This creates a folder named `ada_v2`.
 
@@ -156,22 +153,19 @@ brew install portaudio
 Create a single Python 3.12 environment:
 
 ```bash
-conda create -n ada_v2 python=3.12
-conda activate ada_v2
-
 # Install all dependencies
-pip install -r requirements.txt
+uv sync
 
 # Install Playwright browsers
 playwright install chromium
 ```
 
 ### 3. Frontend Setup
-Requires **Node.js 18+** and **npm**. Download from [nodejs.org](https://nodejs.org/) if not installed.
+Requires **Node.js 20+** and **npm**. Download from [nodejs.org](https://nodejs.org/) if not installed.
 
 ```bash
 # Verify Node is installed
-node --version  # Should show v18.x or higher
+node --version  # Should show v20.x or higher
 
 # Install frontend dependencies
 npm install
@@ -207,7 +201,6 @@ ADA V2 can slice STL files and send them directly to your 3D printer.
 **Supported Hardware:**
 - **Klipper/Moonraker** (Creality K1, Voron, etc.)
 - **OctoPrint** instances
-- **PrusaLink** (Experimental)
 
 **Step 1: Install Slicer**
 ADA uses **OrcaSlicer** (recommended) or PrusaSlicer to generate G-code.
@@ -226,7 +219,7 @@ ADA uses **OrcaSlicer** (recommended) or PrusaSlicer to generate G-code.
 ### 6. 🔑 Gemini API Key Setup
 ADA uses Google's Gemini API for voice and intelligence. You need a free API key.
 
-1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey).
+1. Go to [Google AI Studio](https://aistudio.google.com/app/api-keys).
 2. Sign in with your Google account.
 3. Click **"Create API Key"** and copy the generated key.
 4. Create a file named `.env` in the `ada_v2` folder (same level as `README.md`).
@@ -247,7 +240,7 @@ You have two options to run the app. Ensure your `ada_v2` environment is active!
 ### Option 1: The "Easy" Way (Single Terminal)
 The app is smart enough to start the backend for you.
 1. Open your terminal in the `ada_v2` folder.
-2. Activate your environment: `conda activate ada_v2`
+2. Run: Windows: .venv\Scripts\activate / MacOS/Linux: source .venv/bin/activate
 3. Run:
    ```bash
    npm run dev
@@ -259,8 +252,7 @@ Use this if you want to see the Python logs (recommended for debugging).
 
 **Terminal 1 (Backend):**
 ```bash
-conda activate ada_v2
-python backend/server.py
+uv run backend/server.py
 ```
 
 **Terminal 2 (Frontend):**
@@ -333,12 +325,6 @@ npm run dev
 
 **Solution**:
 This is a server-side issue from the Gemini API. Simply reconnect by clicking the connect button or saying "Hello Ada" again. If it persists, check your internet connection or try again later.
-
----
-
-## 📸 What It Looks Like
-
-*Coming soon! Screenshots and demo videos will be added here.*
 
 ---
 
@@ -432,6 +418,6 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 ---
 
 <p align="center">
-  <strong>Built with 🤖 by Nazir Louis</strong><br>
+  <strong>Built by Nazir Louis & Michatec</strong><br>
   <em>Bridging AI, CAD, and Vision in a Single Interface</em>
 </p>
