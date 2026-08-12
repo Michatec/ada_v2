@@ -20,6 +20,7 @@ cad_outputs/
 # Node.js
 node_modules/
 dist/
+public/wasm
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

@@ -4,9 +4,10 @@
   "description": "A.D.A V2 - AI Assistant",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && npx electron .\"",
-    "build": "vite build",
-    "start": "concurrently -k \"vite\" \"wait-on tcp:5173 && npx electron .\""
+    "copy:wasm": "node scripts/copy-wasm.js",
+    "dev": "npm run copy:wasm && concurrently -k \"vite\" \"wait-on tcp:5173 && npx electron .\"",
+    "build": "npm run copy:wasm && vite build",
+    "start": "npm run copy:wasm &&concurrently -k \"vite\" \"wait-on tcp:5173 && npx electron .\""
   },
   "keywords": [],
   "author": "",

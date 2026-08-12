@@ -600,7 +600,7 @@ function App() {
                 // 2. Initialize Vision
                 console.log("Initializing FilesetResolver...");
                 const vision = await FilesetResolver.forVisionTasks(
-                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+                    "/wasm"
                 );
                 console.log("FilesetResolver initialized.");
 
