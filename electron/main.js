@@ -170,19 +170,17 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', () => {
     console.log('App closing... Killing Python backend.');
-    if (pythonProcess) {
+    if (pythonProcess && !pythonProcess.killed) {
         if (process.platform === 'win32') {
-            // Windows: Force kill the process tree synchronously
+            const { execSync } = require('child_process');
             try {
-                const { execSync } = require('child_process');
-                execSync(`taskkill /pid ${pythonProcess.pid} /f /t`);
+                execSync(`taskkill /pid ${pythonProcess.pid} /f /t`, { stdio: 'ignore' });
             } catch (e) {
                 console.error('Failed to kill python process:', e.message);
             }
         } else {
-            // Unix: SIGKILL
             pythonProcess.kill('SIGKILL');
         }
-        pythonProcess = null;
     }
+    pythonProcess = null;
 });

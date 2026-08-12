@@ -1,5 +1,6 @@
 import sys
 import asyncio
+from contextlib import asynccontextmanager
 
 import socketio
 import uvicorn
@@ -23,7 +24,24 @@ from kasa_agent import KasaAgent
 
 # Create a Socket.IO server
 sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins=['http://localhost:5173'])
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app):
+    import sys
+    print(f"[SERVER DEBUG] Startup Event Triggered")
+    print(f"[SERVER DEBUG] Python Version: {sys.version}")
+    try:
+        loop = asyncio.get_running_loop()
+        print(f"[SERVER DEBUG] Running Loop: {type(loop)}")
+    except Exception as e:
+        print(f"[SERVER DEBUG] Error checking loop: {e}")
+
+    print("[SERVER] Startup: Initializing Kasa Agent...")
+    await kasa_agent.initialize()
+    
+    yield
+
+app = FastAPI(lifespan=lifespan)
 app_socketio = socketio.ASGIApp(sio, app)
 
 import signal
@@ -103,22 +121,6 @@ load_settings()
 authenticator = None
 kasa_agent = KasaAgent(known_devices=SETTINGS.get("kasa_devices"))
 # tool_permissions is now SETTINGS["tool_permissions"]
-
-@app.on_event("startup")
-async def startup_event():
-    import sys
-    print(f"[SERVER DEBUG] Startup Event Triggered")
-    print(f"[SERVER DEBUG] Python Version: {sys.version}")
-    try:
-        loop = asyncio.get_running_loop()
-        print(f"[SERVER DEBUG] Running Loop: {type(loop)}")
-        policy = asyncio.get_event_loop_policy()
-        print(f"[SERVER DEBUG] Current Policy: {type(policy)}")
-    except Exception as e:
-        print(f"[SERVER DEBUG] Error checking loop: {e}")
-
-    print("[SERVER] Startup: Initializing Kasa Agent...")
-    await kasa_agent.initialize()
 
 @app.get("/status")
 async def status():

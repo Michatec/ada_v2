@@ -29,7 +29,7 @@ Requirements:
 3. You MUST assign the final object to a variable named `result_part`.
 4. If you create a sketch or line, extrude it to make it a solid `Part`.
 5. The model should be centered at (0,0,0) and have reasonable dimensions (mm).
-6. **IMPORTANT**: Do NOT use old or PascalCase function names for core operations.
+6. **IMPORTANT**: Use ONLY lowercase builder methods. Build123d does NOT have PascalCase core operations.
    - Use `make_face()` instead of `MakeFace()`.
    - Use `extrude()` instead of `Extrude()`.
    - Use `fillet()` instead of `Fillet()`.
@@ -38,15 +38,20 @@ Requirements:
    - Use `loft()` instead of `Loft()`.
    - Use `sweep()` instead of `Sweep()`.
    - Use `offset()` instead of `Offset()`.
-   - generally prefer lowercase builder methods inside contexts.
 
-7. **Vector Access**: Do NOT access vector components like `v.X`, `v.Y`, `v.Z` unless you are sure they exist (use `v.X` etc on Vector objects, but ensure they are Vectors).
-8. **Final Output**: The script MUST end by exporting the final part to an STL file named 'output.stl'.
+7. **Available Shapes**: The following shape constructors exist in build123d: `Box`, `Sphere`, `Cylinder`, `Cone`, `Torus`, `Wedge`, etc.
+   - **There is NO `Ellipsoid` class.** If you need an ellipsoid/sphere-like shape, use `Sphere(radius)` or combine `scale()` with `Sphere()`.
+   - **DO NOT use `Ellipsoid`** - it will crash with NameError.
+
+8. **Vector Access**: Do NOT access vector components like `v.X`, `v.Y`, `v.Z` unless you are sure they exist (use `v.X` etc on Vector objects, but ensure they are Vectors).
+9. **Final Output**: The script MUST end by exporting the final part to an STL file named 'output.stl'.
    - `export_stl(result_part, 'output.stl')`
 
-9. **Robustness**: Operations like `fillet()` and `chamfer()` will crash if the radius is too large for the geometry.
-   - Use conservative values (e.g., 0.5mm to 2mm) unless you are certain of the dimensions.
-   - If a fillet is purely aesthetic, keep it small to ensure success.
+10. **Robustness**: Operations like `fillet()` and `chamfer()` will crash if the radius is too large for the geometry.
+    - Use VERY conservative values (e.g., 0.1mm to 0.5mm) unless you are certain of the dimensions.
+    - **Fillet radius MUST be smaller than the smallest edge length.** If you are unsure, use 0.1 or 0.2.
+    - If a fillet is purely aesthetic, keep it tiny to ensure success.
+    - When in doubt, OMIT fillets entirely.
 
 Example Script:
 ```python
@@ -54,7 +59,7 @@ from build123d import *
 
 with BuildPart() as p:
     Box(10, 10, 10)
-    Fillet(p.edges(), radius=1)
+    fillet(p.edges(), radius=0.5)
 
 result_part = p.part
 export_stl(result_part, 'output.stl')
