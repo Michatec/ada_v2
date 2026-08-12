@@ -6,6 +6,7 @@ __pycache__/
 venv/
 .venv/
 env/
+uv.lock
 
 # ADA Specific Local Data
 backend/reference.jpg
@@ -22,6 +23,7 @@ dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
 
 # Electron
 dist-electron/
@@ -35,4 +37,3 @@ out/
 # OS
 .DS_Store
 Thumbs.db
-uv.lock

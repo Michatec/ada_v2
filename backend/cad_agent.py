@@ -11,12 +11,13 @@ from typing import List, Optional
 load_dotenv()
 
 class CadAgent:
-    def __init__(self, on_thought=None, on_status=None):
+    def __init__(self, on_thought=None, on_status=None, on_execute_confirmation=None):
         self.client = genai.Client(http_options={"api_version": "v1beta"}, api_key=os.getenv("GEMINI_API_KEY"))
         # Using Gemini 2.5 Pro for thinking/streaming support
         self.model = "gemini-3.1-flash-lite"
         self.on_thought = on_thought  # Callback for streaming thoughts 
         self.on_status = on_status  # Callback for retry status info
+        self.on_execute_confirmation = on_execute_confirmation  # Callback for human verification before executing generated code
         
         self.system_instruction = """
 You are a Python-based 3D CAD Engineer using the `build123d` library.
@@ -60,12 +61,13 @@ export_stl(result_part, 'output.stl')
 ```
 """
 
-    async def generate_prototype(self, prompt: str, output_dir: Optional[str] = None):
+    async def generate_prototype(self, prompt: str, output_dir: Optional[str] = None, confirm_execution: bool = True):
         """
         Generates 3D geometry by asking Gemini for a script, then running it LOCALLY.
         Args:
             prompt: User's description of the model to generate.
             output_dir: Directory to save the script and STL. If None, uses temp dir.
+            confirm_execution: If True, requires human approval before executing generated code.
         """
         print(f"[CadAgent DEBUG] [START] Generation started for: '{prompt}'")
         
@@ -151,6 +153,16 @@ export_stl(result_part, 'output.stl')
                     f.write(code_with_path)
                     
                 print(f"[CadAgent DEBUG] [EXEC] Running local script: {script_path}")
+                
+                if confirm_execution and self.on_execute_confirmation:
+                    try:
+                        confirmed = await self.on_execute_confirmation(script_path, output_stl)
+                    except Exception as e:
+                        print(f"[CadAgent DEBUG] [ERR] Execution confirmation failed: {e}")
+                        return None
+                    if not confirmed:
+                        print("[CadAgent DEBUG] [INFO] Execution denied by user.")
+                        return None
                 
                 # 4. Execute Locally
                 import subprocess
@@ -238,12 +250,13 @@ Original request: {prompt}
             traceback.print_exc()
             return None
 
-    async def iterate_prototype(self, prompt: str, output_dir: Optional[str] = None):
+    async def iterate_prototype(self, prompt: str, output_dir: Optional[str] = None, confirm_execution: bool = True):
         """
         Iterates on the existing design by reading 'current_design.py' and applying changes.
         Args:
             prompt: User's description of the changes to make.
             output_dir: Directory containing existing script and where to save new STL.
+            confirm_execution: If True, requires human approval before executing generated code.
         """
         print(f"[CadAgent DEBUG] [START] Iteration started for: '{prompt}'")
         
@@ -370,6 +383,16 @@ Ensure you still export to 'output.stl'.
                     
                 print(f"[CadAgent DEBUG] [EXEC] Running local script: {script_path}")
                 
+                if confirm_execution and self.on_execute_confirmation:
+                    try:
+                        confirmed = await self.on_execute_confirmation(script_path, output_stl)
+                    except Exception as e:
+                        print(f"[CadAgent DEBUG] [ERR] Execution confirmation failed: {e}")
+                        return None
+                    if not confirmed:
+                        print("[CadAgent DEBUG] [INFO] Execution denied by user.")
+                        return None
+                
                 # 4. Execute Locally
                 import subprocess
                 import sys
@@ -385,10 +408,10 @@ Ensure you still export to 'output.stl'.
                     )
                     stdout, stderr = proc.stdout, proc.stderr
                 except Exception as e:
-                    print(f"[CadAgent DEBUG] [ERR] Subprocess run failed: {e}")
-                    proc = type('obj', (object,), {'returncode': 1})()
-                    stdout = ""
-                    stderr = str(e)
+                     print(f"[CadAgent DEBUG] [ERR] Subprocess run failed: {e}")
+                     proc = type('obj', (object,), {'returncode': 1})()
+                     stdout = ""
+                     stderr = str(e)
                 
                 if proc.returncode != 0:
                     error_msg = stderr

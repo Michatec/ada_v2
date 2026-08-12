@@ -4,6 +4,7 @@ import io
 import os
 import sys
 import traceback
+import uuid
 from dotenv import load_dotenv
 import cv2
 import pyaudio
@@ -211,7 +212,7 @@ from kasa_agent import KasaAgent
 from printer_agent import PrinterAgent
 
 class AudioLoop:
-    def __init__(self, video_mode=DEFAULT_MODE, on_audio_data=None, on_video_frame=None, on_cad_data=None, on_web_data=None, on_transcription=None, on_tool_confirmation=None, on_cad_status=None, on_cad_thought=None, on_project_update=None, on_device_update=None, on_error=None, input_device_index=None, input_device_name=None, output_device_index=None, kasa_agent=None):
+    def __init__(self, video_mode=DEFAULT_MODE, on_audio_data=None, on_video_frame=None, on_cad_data=None, on_web_data=None, on_transcription=None, on_tool_confirmation=None, on_cad_status=None, on_cad_thought=None, on_project_update=None, on_device_update=None, on_error=None, input_device_index=None, input_device_name=None, output_device_index=None, kasa_agent=None, on_cad_execution_confirmation=None):
         self.video_mode = video_mode
         self.on_audio_data = on_audio_data
         self.on_video_frame = on_video_frame
@@ -227,6 +228,7 @@ class AudioLoop:
         self.input_device_index = input_device_index
         self.input_device_name = input_device_name
         self.output_device_index = output_device_index
+        self.on_cad_execution_confirmation = on_cad_execution_confirmation
 
         self.audio_in_queue = None
         self.out_queue = None
@@ -253,7 +255,11 @@ class AudioLoop:
             if self.on_cad_status:
                 self.on_cad_status(status_info)
         
-        self.cad_agent = CadAgent(on_thought=handle_cad_thought, on_status=handle_cad_status)
+        self.cad_agent = CadAgent(
+            on_thought=handle_cad_thought, 
+            on_status=handle_cad_status,
+            on_execute_confirmation=self._confirm_cad_execution if self.on_cad_execution_confirmation else None
+        )
         self.web_agent = WebAgent()
         self.kasa_agent = kasa_agent if kasa_agent else KasaAgent()
         self.printer_agent = PrinterAgent()
@@ -265,6 +271,7 @@ class AudioLoop:
         
         self.permissions = {} # Default Empty (Will treat unset as True)
         self._pending_confirmations = {}
+        self._pending_cad_executions = {}
 
         # Video buffering state
         self._latest_image_payload = None
@@ -318,6 +325,42 @@ class AudioLoop:
                  print(f"[ADA DEBUG] [WARN] Request {request_id} future already done. Result: {future.result()}")
         else:
             print(f"[ADA DEBUG] [WARN] Confirmation Request {request_id} not found in pending dict. Keys: {list(self._pending_confirmations.keys())}")
+
+    async def _confirm_cad_execution(self, script_path, output_stl):
+        request_id = str(uuid.uuid4())
+        future = asyncio.Future()
+        self._pending_cad_executions[request_id] = future
+        
+        try:
+            if self.on_cad_execution_confirmation:
+                await self.on_cad_execution_confirmation({
+                    "id": request_id,
+                    "script_path": script_path,
+                    "output_stl": output_stl
+                })
+        except Exception as e:
+            print(f"[ADA DEBUG] [ERR] CAD execution confirmation setup failed: {e}")
+            self._pending_cad_executions.pop(request_id, None)
+            return False
+        
+        try:
+            confirmed = await asyncio.wait_for(future, timeout=180)
+        except asyncio.TimeoutError:
+            print(f"[ADA DEBUG] [WARN] CAD execution confirmation timed out for {request_id}")
+            confirmed = False
+        finally:
+            self._pending_cad_executions.pop(request_id, None)
+        
+        return confirmed
+
+    def resolve_cad_execution(self, request_id, confirmed):
+        print(f"[ADA DEBUG] [RESOLVE] resolve_cad_execution called. ID: {request_id}, Confirmed: {confirmed}")
+        if request_id in self._pending_cad_executions:
+            future = self._pending_cad_executions[request_id]
+            if not future.done():
+                future.set_result(confirmed)
+        else:
+            print(f"[ADA DEBUG] [WARN] CAD Execution Request {request_id} not found in pending dict.")
 
     def clear_audio_queue(self):
         """Clears the queue of pending audio chunks to stop playback immediately."""
@@ -495,7 +538,7 @@ class AudioLoop:
         cad_output_dir = str(self.project_manager.get_current_project_path() / "cad")
         
         # Call the secondary agent with project path
-        cad_data = await self.cad_agent.generate_prototype(prompt, output_dir=cad_output_dir)
+        cad_data = await self.cad_agent.generate_prototype(prompt, output_dir=cad_output_dir, confirm_execution=True)
         
         if cad_data:
             print(f"[ADA DEBUG] [OK] CadAgent returned data successfully.")
@@ -1086,7 +1129,7 @@ class AudioLoop:
                                     cad_output_dir = str(self.project_manager.get_current_project_path() / "cad")
                                     
                                     # Call CadAgent to iterate on the design
-                                    cad_data = await self.cad_agent.iterate_prototype(prompt, output_dir=cad_output_dir)
+                                    cad_data = await self.cad_agent.iterate_prototype(prompt, output_dir=cad_output_dir, confirm_execution=True)
                                     
                                     if cad_data:
                                         print(f"[ADA DEBUG] [OK] CadAgent iteration returned data successfully.")

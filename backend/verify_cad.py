@@ -12,7 +12,7 @@ async def main():
     prompt = "A simple 10x10x10 cube with a 5mm hole in the center."
     
     print(f"Testing CadAgent with prompt: '{prompt}'")
-    data = await agent.generate_prototype(prompt)
+    data = await agent.generate_prototype(prompt, confirm_execution=False)
     
     if data and data.get('format') == 'stl' and data.get('data'):
         print("\n✅ Verification Successful!")

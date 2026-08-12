@@ -98,7 +98,7 @@ export_stl(result_part, 'output.stl')
     # 4. Execute temp_cad_gen.py using subprocess (REAL execution in ada_cad_env)
     # 5. Return STL
     
-    result = await agent.iterate_prototype("make it a cylinder")
+    result = await agent.iterate_prototype("make it a cylinder", confirm_execution=False)
     
     # 5. Verify Results
     print(f"[3] Result Keys: {result.keys() if result else 'None'}")

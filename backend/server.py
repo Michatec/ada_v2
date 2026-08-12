@@ -1,11 +1,6 @@
 import sys
 import asyncio
 
-# Fix for asyncio subprocess support on Windows
-# MUST BE SET BEFORE OTHER IMPORTS
-if sys.platform == 'win32':
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-
 import socketio
 import uvicorn
 from fastapi import FastAPI
@@ -27,11 +22,12 @@ from authenticator import FaceAuthenticator
 from kasa_agent import KasaAgent
 
 # Create a Socket.IO server
-sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins=['http://localhost:5173'])
 app = FastAPI()
 app_socketio = socketio.ASGIApp(sio, app)
 
 import signal
+import uuid
 
 # --- SHUTDOWN HANDLER ---
 def signal_handler(sig, frame):
@@ -235,6 +231,23 @@ async def start_audio(sid, data=None):
         print(f"Requesting confirmation for tool: {data.get('tool')}")
         asyncio.create_task(sio.emit('tool_confirmation_request', data))
 
+    async def on_cad_execution_confirmation(data):
+        # data = {"id": "uuid", "script_path": "...", "output_stl": "..."}
+        request_id = data.get('id')
+        script_path = data.get('script_path')
+        
+        try:
+            with open(script_path, 'r', encoding='utf-8') as f:
+                code = f.read()
+        except Exception as e:
+            print(f"[SERVER] [ERR] Failed to read script for confirmation: {e}")
+            raise RuntimeError(f"Failed to read script for confirmation: {e}")
+        
+        await sio.emit('cad_execution_request', {
+            'request_id': request_id,
+            'code': code
+        })
+
     # Callback to send CAD status to frontend
     def on_cad_status(status):
         # status can be: 
@@ -283,6 +296,7 @@ async def start_audio(sid, data=None):
             on_project_update=on_project_update,
             on_device_update=on_device_update,
             on_error=on_error,
+            on_cad_execution_confirmation=on_cad_execution_confirmation,
 
             input_device_index=device_index,
             input_device_name=device_name,
@@ -409,6 +423,19 @@ async def confirm_tool(sid, data):
         audio_loop.resolve_tool_confirmation(request_id, confirmed)
     else:
         print("Audio loop not active, cannot resolve confirmation.")
+
+@sio.event
+async def confirm_cad_execution(sid, data):
+    # data: { "id": "...", "confirmed": True/False }
+    request_id = data.get('id')
+    confirmed = data.get('confirmed', False)
+    
+    print(f"[SERVER DEBUG] Received CAD execution confirmation for {request_id}: {confirmed}")
+    
+    if audio_loop:
+        audio_loop.resolve_cad_execution(request_id, confirmed)
+    else:
+        print("[SERVER DEBUG] [WARN] Audio loop not active, cannot resolve CAD execution confirmation.")
 
 @sio.event
 async def shutdown(sid, data=None):

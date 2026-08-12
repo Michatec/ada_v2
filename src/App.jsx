@@ -19,7 +19,7 @@ import SettingsWindow from './components/SettingsWindow';
 
 
 const socket = io('http://localhost:8000');
-const { ipcRenderer } = window.require('electron');
+const { minimize, maximize, close } = window.electronAPI;
 
 function App() {
     const [status, setStatus] = useState('Disconnected');
@@ -55,6 +55,7 @@ function App() {
     const [browserData, setBrowserData] = useState({ image: null, logs: [] });
     // showMemoryPrompt removed - memory is now actively saved to project
     const [confirmationRequest, setConfirmationRequest] = useState(null); // { id, tool, args }
+    const [cadExecutionRequest, setCadExecutionRequest] = useState(null); // { request_id, code }
     const [kasaDevices, setKasaDevices] = useState([]);
     const [showKasaWindow, setShowKasaWindow] = useState(false);
     const [showPrinterWindow, setShowPrinterWindow] = useState(false);
@@ -470,6 +471,12 @@ function App() {
             setConfirmationRequest(data);
         });
 
+        // Handle CAD execution confirmation requests
+        socket.on('cad_execution_request', (data) => {
+            console.log("Received CAD Execution Request:", data);
+            setCadExecutionRequest(data);
+        });
+
         // Handle Print Window Request (from CadWindow)
         socket.on('request_print_window', () => {
             setShowPrinterWindow(true);
@@ -628,6 +635,7 @@ function App() {
             socket.off('browser_frame');
             socket.off('transcription');
             socket.off('tool_confirmation_request');
+            socket.off('cad_execution_request');
             socket.off('kasa_devices');
             socket.off('printer_list');
             socket.off('slicing_progress');
@@ -1104,14 +1112,12 @@ function App() {
         }
     };
 
-    const handleMinimize = () => ipcRenderer.send('window-minimize');
-    const handleMaximize = () => ipcRenderer.send('window-maximize');
+    const handleMinimize = () => minimize();
+    const handleMaximize = () => maximize();
 
     // Close Application - memory is now actively saved to project, no prompt needed
     const handleCloseRequest = () => {
-        // Emit shutdown signal to backend for graceful shutdown
-        // Use volatile emit with timeout fallback to ensure window closes even if server is unresponsive
-        const closeWindow = () => ipcRenderer.send('window-close');
+        const closeWindow = () => close();
 
         if (socket.connected) {
             console.log('[APP] Sending shutdown signal to backend...');
@@ -1164,6 +1170,16 @@ function App() {
         if (confirmationRequest) {
             socket.emit('confirm_tool', { id: confirmationRequest.id, confirmed: false });
             setConfirmationRequest(null);
+        }
+    };
+
+    const handleConfirmCadExecution = (confirmed) => {
+        if (cadExecutionRequest) {
+            socket.emit('confirm_cad_execution', {
+                id: cadExecutionRequest.request_id,
+                confirmed: confirmed
+            });
+            setCadExecutionRequest(null);
         }
     };
 
@@ -1685,6 +1701,60 @@ function App() {
                     onConfirm={handleConfirmTool}
                     onDeny={handleDenyTool}
                 />
+
+                {/* CAD Execution Confirmation Modal */}
+                {cadExecutionRequest && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+                        <div className="relative w-full max-w-2xl p-6 bg-black/90 border border-cyan-500/30 rounded-3xl shadow-[0_0_50px_rgba(34,211,238,0.15)] backdrop-blur-2xl">
+                            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none mix-blend-overlay rounded-3xl"></div>
+                            
+                            <div className="flex items-center gap-4 mb-4 relative z-10">
+                                <div className="p-3 rounded-full bg-yellow-900/30 border border-yellow-500/50 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.2)]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4-10-5V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-yellow-400 tracking-wider font-mono drop-shadow-sm">
+                                        AUTHORIZE CODE EXECUTION
+                                    </h2>
+                                    <p className="text-xs text-yellow-600 font-mono tracking-widest uppercase">
+                                        Review Generated Script Before Running
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="mb-4 relative z-10">
+                                <p className="text-gray-300 leading-relaxed text-sm mb-2">
+                                    The AI generated the following Python script. Review it carefully before authorizing execution on your machine.
+                                </p>
+                                <div className="bg-gray-950 border border-gray-700 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
+                                    <div className="bg-gray-900/80 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                                        <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Generated Python Script</span>
+                                        <span className="text-xs text-white/50 font-mono">current_design.py</span>
+                                    </div>
+                                    <pre className="p-4 text-xs text-green-400 font-mono whitespace-pre-wrap leading-relaxed">
+                                        {cadExecutionRequest.code}
+                                    </pre>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4 relative z-10">
+                                <button
+                                    onClick={() => handleConfirmCadExecution(false)}
+                                    className="flex-1 px-4 py-3.5 rounded-xl border border-red-500/30 bg-red-950/40 text-red-400 hover:bg-red-900/60 hover:border-red-500 hover:text-red-300 transition-all duration-200 font-bold tracking-wider uppercase text-xs"
+                                >
+                                    Deny
+                                </button>
+                                <button
+                                    onClick={() => handleConfirmCadExecution(true)}
+                                    className="flex-1 px-4 py-3.5 rounded-xl border border-cyan-500/30 bg-cyan-950/40 text-cyan-400 hover:bg-cyan-900/60 hover:border-cyan-400 hover:text-cyan-300 transition-all duration-200 font-bold tracking-wider uppercase text-xs shadow-[0_0_20px_rgba(34,211,238,0.1)] hover:shadow-[0_0_30px_rgba(34,211,238,0.25)] relative overflow-hidden group"
+                                >
+                                    <span className="relative z-10">Authorize Execution</span>
+                                    <div className="absolute inset-0 bg-cyan-400/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

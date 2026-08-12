@@ -56,7 +56,7 @@ class TestCadGeneration:
         agent.on_status = lambda s: statuses.append(s)
         
         try:
-            result = await agent.generate_prototype("A simple 10mm cube")
+            result = await agent.generate_prototype("A simple 10mm cube", confirm_execution=False)
             print(f"Generation result: {result}")
             print(f"Thoughts received: {len(thoughts)}")
             print(f"Statuses received: {len(statuses)}")
@@ -75,7 +75,7 @@ class TestCadGeneration:
     async def test_generate_sphere(self, agent):
         """Test generating a sphere."""
         try:
-            result = await agent.generate_prototype("A sphere with 25mm radius")
+            result = await agent.generate_prototype("A sphere with 25mm radius", confirm_execution=False)
             print(f"Sphere generation result: {result}")
         except Exception as e:
             print(f"Sphere generation failed: {e}")
@@ -104,7 +104,7 @@ class TestCadIteration:
             pytest.skip("No existing temp_cad_gen.py to iterate on")
         
         try:
-            result = await agent.iterate_prototype("Make it 50% larger")
+            result = await agent.iterate_prototype("Make it 50% larger", confirm_execution=False)
             print(f"Iteration result: {result}")
         except Exception as e:
             print(f"Iteration failed: {e}")
